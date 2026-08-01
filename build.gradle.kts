@@ -28,11 +28,7 @@ allprojects {
     }
 }
 
-// Make sure these tasks are defined OUTSIDE the allprojects block
+// Only register the 'make' task – 'clean' already exists
 tasks.register("make") {
     dependsOn(subprojects.map { it.tasks.named("make") })
-}
-
-tasks.register("clean") {
-    dependsOn(subprojects.map { it.tasks.named("clean") })
 }
