@@ -1,15 +1,17 @@
-// Top-level build file
+// Cloudstream gradle plugin which makes everything work and builds plugins
 buildscript {
-    val kotlinVersion = "2.1.20"
-
     repositories {
         google()
         mavenCentral()
+        // Shitpack repo which contains our tools and dependencies
+        maven("https://jitpack.io")
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:8.6.0")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("com.android.tools.build:gradle:7.0.4")
+        // Cloudstream gradle plugin - this is what actually builds everything
+        classpath("com.github.recloudstream:gradle:-SNAPSHOT")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21")
     }
 }
 
@@ -19,16 +21,48 @@ allprojects {
         mavenCentral()
         maven("https://jitpack.io")
     }
-
-    // Set Java compatibility for all subprojects
-    apply(plugin = "java")
-    extensions.configure<JavaPluginExtension> {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
 }
 
-// Only register the 'make' task – 'clean' already exists
-tasks.register("make") {
-    dependsOn(subprojects.map { it.tasks.named("make") })
+// Helper extension functions for cleaner configuration
+fun Project.cloudstream(configuration: CloudstreamExtension.() -> Unit) =
+    extensions.getByName<CloudstreamExtension>("cloudstream").configuration()
+
+fun Project.android(configuration: com.android.build.gradle.BaseExtension.() -> Unit) =
+    extensions.getByName<com.android.build.gradle.BaseExtension>("android").configuration()
+
+subprojects {
+    // Apply required plugins
+    apply(plugin = "com.android.library")
+    apply(plugin = "kotlin-android")
+    apply(plugin = "com.lagradost.cloudstream3.gradle")
+
+    // Configure the Cloudstream extension
+    cloudstream {
+        // When running through GitHub workflow, GITHUB_REPOSITORY should contain current repository name
+        setRepo(System.getenv("GITHUB_REPOSITORY") ?: "user/repo")
+    }
+
+    // Android configuration
+    android {
+        defaultConfig {
+            minSdk = 21
+            compileSdkVersion(33)
+            targetSdk = 33
+        }
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
+        }
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+            kotlinOptions {
+                jvmTarget = "1.8"
+                // Optimizations for better performance
+                freeCompilerArgs = freeCompilerArgs + listOf(
+                    "-Xno-call-assertions",
+                    "-Xno-param-assertions",
+                    "-Xno-receiver-assertions"
+                )
+            }
+        }
+    }
 }
