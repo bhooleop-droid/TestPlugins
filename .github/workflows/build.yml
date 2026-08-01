@@ -23,11 +23,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build plugins
-        run: ./gradlew make --stacktrace
-
-      - name: List generated files
-        run: ls -l repo.json build/plugins/ || echo "Files missing"
+      - name: Build with Gradle
+        run: ./gradlew make
 
       - name: Upload repo.json
         uses: actions/upload-artifact@v4
