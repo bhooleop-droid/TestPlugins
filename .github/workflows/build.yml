@@ -9,17 +9,46 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      # 1. Checkout code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Set up JDK 11
       - name: Set up JDK 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '11'
           distribution: 'temurin'
+
+      # 3. Make gradlew executable (Linux)
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # 4. Build and generate repo.json + APKs
       - name: Build with Gradle
-        run: ./gradlew build
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
+        run: ./gradlew make
+
+      # 5. Upload the generated repo.json (so users can add it to Zangetsu)
+      - name: Upload repo.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-json
+          path: repo.json
+
+      # 6. Upload all plugin APKs
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
         with:
           name: plugins
           path: build/plugins/*.apk
+
+      # 7. Also push repo.json to the master branch (optional, but convenient)
+      - name: Push repo.json to master
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add repo.json
+          git commit -m "Update repo.json [skip ci]" || echo "No changes to commit"
+          git push
