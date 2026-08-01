@@ -39,21 +39,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: plugins
-          path: build/plugins/*.apk          name: repo-json
-          path: repo.json
-
-      # 6. Upload all plugin APKs
-      - name: Upload APKs
-        uses: actions/upload-artifact@v4
-        with:
-          name: plugins
           path: build/plugins/*.apk
-
-      # 7. Also push repo.json to the master branch (optional, but convenient)
-      - name: Push repo.json to master
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add repo.json
-          git commit -m "Update repo.json [skip ci]" || echo "No changes to commit"
-          git push
